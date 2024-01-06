@@ -1,0 +1,17 @@
+{
+  "name": "tmp.x4qzflnqqs",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "main.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^20.10.6",
+    "tsx": "^4.7.0"
+  }
+}
