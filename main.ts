@@ -1,51 +1,47 @@
 import { readdir, readFile } from 'fs/promises';
 import { resolve } from 'path';
 
-async function getFiles(dir: string): Promise<string[]> {
-  const dirents = await readdir(dir, { withFileTypes: true });
-  const files = await Promise.all(
-    dirents.map(async (dirent) => {
-      const res = resolve(dir, dirent.name);
-      return dirent.isDirectory() ? await getFiles(res) : res;
+async function getAllFilePathsInside(directoryPath: string): Promise<string[]> {
+  const directoryEntries = await readdir(directoryPath, { withFileTypes: true });
+  const pathsToFiles = await Promise.all(
+    directoryEntries.map(async (directoryEntry) => {
+      const resolvedPath = resolve(directoryPath, directoryEntry.name);
+      return directoryEntry.isDirectory()
+        ? await getAllFilePathsInside(resolvedPath)
+        : resolvedPath;
     })
   );
-  return files.flat();
+  return pathsToFiles.flat();
 }
 
 
 
-const imageDir = '/_/l/images/badly_named_imported_from_notion/';
-const notionDir = '/_/l/Notion/';
+const orphanedImageCandidatesDir = '/_/l/images/badly_named_imported_from_notion/';
+const importedNotionDir = '/_/l/Notion/';
 
 // Step 1: Load list of all files inside image directory
-const imageFiles = await readdir(imageDir);
+const orphanedImageFilenameCandidates = await readdir(orphanedImageCandidatesDir);
 
-// Step 2: Initialize empty array for orphaned image filenames
-const orphanedFiles: string[] = [];
-
-// Step 3.1: Load recursively all files' paths from Notion directory
-const notionFiles = await getFiles(notionDir);
+// Step 2.1: Load recursively all files' paths from Notion directory
+const importedMdDocumentsFilenames = await getAllFilePathsInside(importedNotionDir);
 // console.log('file: main.ts:35 ~ notionFiles:', notionFiles);
 
-// write a check if there are files that have file extension other than md throw error
-if (notionFiles.some(file => !file.endsWith('.md'))) {
+if (importedMdDocumentsFilenames.some(filename => !filename.endsWith('.md'))) {
   throw new Error('Notion directory contains files that are not markdown files');
 }
 
-// Step 3.2: Read all contents of those files into one single variable as string
-let combinedString = '';
-for (const file of notionFiles) {
-  const content = await readFile(file, 'utf-8');
-  combinedString += content;
+// Step 2.2: Read all contents of those files into one single variable as string
+let allNotionDocumentsContentsCombined = '';
+
+for (const filename of importedMdDocumentsFilenames) {
+  allNotionDocumentsContentsCombined += await readFile(filename, 'utf-8');
 }
 
-console.log('combinedString.length:', combinedString.length);
+console.log('Length of all notion documents contents combined:', allNotionDocumentsContentsCombined.length);
 
-// Step 3.3: Loop over all file names from step 1 and check if every image's filename found in the combined string
-for (const imageFile of imageFiles) {
-  if (!combinedString.includes(imageFile)) {
-    orphanedFiles.push(imageFile);
-  }
-}
+// Step 2.3: Loop over all file names from step 1 and check if every image's filename found in the combined string
+const orphanedImageFilenames: string[] = orphanedImageFilenameCandidates
+  .filter(filename => !allNotionDocumentsContentsCombined.includes(filename));
 
-console.log('Orphaned image filenames:', orphanedFiles);
+// Step 3: Log the result
+console.log('Orphaned image filenames:', orphanedImageFilenames);
