@@ -23,18 +23,18 @@ const importedNotionDir = '/_/l/Notion/';
 const orphanedImageFilenameCandidates = await readdir(orphanedImageCandidatesDir);
 
 // Step 2.1: Load recursively all files' paths from Notion directory
-const importedMdDocumentsFilenames = await getAllFilePathsInside(importedNotionDir);
+const importedMdDocumentsFilePaths = await getAllFilePathsInside(importedNotionDir);
 // console.log('file: main.ts:35 ~ notionFiles:', notionFiles);
 
-if (importedMdDocumentsFilenames.some(filename => !filename.endsWith('.md'))) {
+if (importedMdDocumentsFilePaths.some(filename => !filename.endsWith('.md'))) {
   throw new Error('Notion directory contains files that are not markdown files');
 }
 
 // Step 2.2: Read all contents of those files into one single variable as string
 let allNotionDocumentsContentsCombined = '';
 
-for (const filename of importedMdDocumentsFilenames) {
-  allNotionDocumentsContentsCombined += await readFile(filename, 'utf-8');
+for (const mdFilePath of importedMdDocumentsFilePaths) {
+  allNotionDocumentsContentsCombined += await readFile(mdFilePath, 'utf-8');
 }
 
 console.log('Length of all notion documents contents combined:', allNotionDocumentsContentsCombined.length);
